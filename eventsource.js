@@ -1,3 +1,8 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 /** @license
  * eventsource.js
  * Available under MIT License (MIT)
@@ -7,13 +12,13 @@
 /*jslint indent: 2, vars: true, plusplus: true */
 /*global setTimeout, clearTimeout */
 
-var EventSourcePolyfill = (function (global) {
+var EventSourcePolyfill = function (global) {
     "use strict";
 
     var setTimeout = global.setTimeout;
     var clearTimeout = global.clearTimeout;
 
-    function Map () {
+    function Map() {
         this.data = {};
     }
 
@@ -27,11 +32,11 @@ var EventSourcePolyfill = (function (global) {
         delete this.data[key + "~"];
     };
 
-    function EventTarget () {
+    function EventTarget() {
         this.listeners = new Map();
     }
 
-    function throwError (e) {
+    function throwError(e) {
         setTimeout(function () {
             throw e;
         }, 0);
@@ -95,12 +100,12 @@ var EventSourcePolyfill = (function (global) {
         }
     };
 
-    function Event (type) {
+    function Event(type) {
         this.type = type;
         this.target = undefined;
     }
 
-    function MessageEvent (type, options) {
+    function MessageEvent(type, options) {
         Event.call(this, type);
         this.data = options.data;
         this.lastEventId = options.lastEventId;
@@ -110,8 +115,8 @@ var EventSourcePolyfill = (function (global) {
 
     var XHR = global.XMLHttpRequest;
     var XDR = global.XDomainRequest;
-    var isCORSSupported = XHR != undefined && (new XHR()).withCredentials != undefined;
-    var Transport = isCORSSupported || (XHR != undefined && XDR == undefined) ? XHR : XDR;
+    var isCORSSupported = XHR != undefined && new XHR().withCredentials != undefined;
+    var Transport = isCORSSupported || XHR != undefined && XDR == undefined ? XHR : XDR;
 
     var WAITING = -1;
     var CONNECTING = 0;
@@ -127,15 +132,15 @@ var EventSourcePolyfill = (function (global) {
     var MINIMUM_DURATION = 1000;
     var MAXIMUM_DURATION = 18000000;
 
-    function getDuration (value, def) {
+    function getDuration(value, def) {
         var n = value;
         if (n !== n) {
             n = def;
         }
-        return (n < MINIMUM_DURATION ? MINIMUM_DURATION : (n > MAXIMUM_DURATION ? MAXIMUM_DURATION : n));
+        return n < MINIMUM_DURATION ? MINIMUM_DURATION : n > MAXIMUM_DURATION ? MAXIMUM_DURATION : n;
     }
 
-    function fire (that, f, event) {
+    function fire(that, f, event) {
         try {
             if (typeof f === "function") {
                 f.call(that, event);
@@ -145,7 +150,9 @@ var EventSourcePolyfill = (function (global) {
         }
     }
 
-    function EventSourcePolyfill (url, options) {
+    function EventSourcePolyfill(url, options) {
+        var _this = this;
+
         var url = url.toString();
 
         var withCredentials = isCORSSupported && options != undefined && Boolean(options.withCredentials);
@@ -160,7 +167,7 @@ var EventSourcePolyfill = (function (global) {
             connectionTimeout = options.connectionTimeout;
         }
         var lastEventId = "";
-        var headers = (options && options.headers) || {};
+        var headers = options && options.headers || {};
         var that = this;
         var retry = initialRetry;
         var wasActivity = false;
@@ -174,7 +181,7 @@ var EventSourcePolyfill = (function (global) {
         var dataBuffer = [];
         var lastEventIdBuffer = "";
         var eventTypeBuffer = "";
-        var onTimeout = undefined;
+        var _onTimeout = undefined;
         var errorOnTimeout = true;
         if (options && options.errorOnTimeout !== undefined && options.errorOnTimeout !== null) {
             errorOnTimeout = options.errorOnTimeout;
@@ -184,7 +191,7 @@ var EventSourcePolyfill = (function (global) {
         var field = "";
         var value = "";
 
-        function close () {
+        function close() {
             currentState = CLOSED;
             if (xhr != undefined) {
                 xhr.abort();
@@ -205,7 +212,7 @@ var EventSourcePolyfill = (function (global) {
             that.readyState = CLOSED;
         }
 
-        function onEvent (type) {
+        function onEvent(type) {
             var responseText = "";
             if (currentState === OPEN || currentState === CONNECTING) {
                 try {
@@ -247,8 +254,9 @@ var EventSourcePolyfill = (function (global) {
                 if (status === 0 && statusText === "" && type === "load" && responseText !== "") {
                     status = 200;
                     statusText = "OK";
-                    if (contentType === "") { // Opera 12
-                        var tmp = (/^data\:([^,]*?)(?:;base64)?,[\S]*$/).exec(url);
+                    if (contentType === "") {
+                        // Opera 12
+                        var tmp = /^data\:([^,]*?)(?:;base64)?,[\S]*$/.exec(url);
                         if (tmp != undefined) {
                             contentType = tmp[1];
                         }
@@ -311,7 +319,7 @@ var EventSourcePolyfill = (function (global) {
                                 heartbeatTimeout = getDuration(Number(value), heartbeatTimeout);
                                 if (timeout !== 0) {
                                     clearTimeout(timeout);
-                                    timeout = setTimeout(onTimeout, heartbeatTimeout);
+                                    timeout = setTimeout(_onTimeout, heartbeatTimeout);
                                 }
                             }
                             value = "";
@@ -362,8 +370,7 @@ var EventSourcePolyfill = (function (global) {
                 charOffset = length;
             }
 
-            if ((currentState === OPEN || currentState === CONNECTING) &&
-                (type === "load" || type === "error" || isWrongStatusCodeOrContentType || (charOffset > 1024 * 1024) || (timeout === 0 && (!wasActivity || !checkActivity)))) {
+            if ((currentState === OPEN || currentState === CONNECTING) && (type === "load" || type === "error" || isWrongStatusCodeOrContentType || charOffset > 1024 * 1024 || timeout === 0 && (!wasActivity || !checkActivity))) {
                 if (isWrongStatusCodeOrContentType) {
                     close();
                 } else {
@@ -387,7 +394,7 @@ var EventSourcePolyfill = (function (global) {
                     if (retry > MAXIMUM_DURATION) {
                         retry = MAXIMUM_DURATION;
                     }
-                    timeout = setTimeout(onTimeout, retry);
+                    timeout = setTimeout(_onTimeout, retry);
                     retry = retry * 2 + 1;
 
                     that.readyState = CONNECTING;
@@ -398,24 +405,24 @@ var EventSourcePolyfill = (function (global) {
             } else {
                 if (timeout === 0) {
                     wasActivity = false;
-                    timeout = setTimeout(onTimeout, heartbeatTimeout);
+                    timeout = setTimeout(_onTimeout, heartbeatTimeout);
                 }
             }
         }
 
-        function onProgress () {
+        function onProgress() {
             onEvent("progress");
         }
 
-        function onLoad () {
+        function onLoad() {
             onEvent("load");
         }
 
-        function onError () {
+        function onError() {
             onEvent("error");
         }
 
-        function onReadyStateChange () {
+        function onReadyStateChange() {
             if (xhr.readyState === 4) {
                 if (xhr.status === 0) {
                     onEvent("error");
@@ -427,9 +434,9 @@ var EventSourcePolyfill = (function (global) {
             }
         }
 
-        if (("readyState" in xhr) && global.opera != undefined) {
+        if ("readyState" in xhr && global.opera != undefined) {
             // workaround for Opera issue with "progress" events
-            timeout0 = setTimeout(function f () {
+            timeout0 = setTimeout(function f() {
                 if (xhr.readyState === 3) {
                     onEvent("progress");
                 }
@@ -437,7 +444,7 @@ var EventSourcePolyfill = (function (global) {
             }, 0);
         }
 
-        onTimeout = () => {
+        _onTimeout = function onTimeout() {
             timeout = 0;
             if (currentState !== WAITING) {
                 onEvent("");
@@ -447,8 +454,8 @@ var EventSourcePolyfill = (function (global) {
             // loading indicator in Safari, Chrome < 14
             // loading indicator in Firefox
             // https://bugzilla.mozilla.org/show_bug.cgi?id=736723
-            if ((!("ontimeout" in xhr) || ("sendAsBinary" in xhr) || ("mozAnon" in xhr)) && global.document != undefined && global.document.readyState != undefined && global.document.readyState !== "complete") {
-                timeout = setTimeout(onTimeout, 4);
+            if ((!("ontimeout" in xhr) || "sendAsBinary" in xhr || "mozAnon" in xhr) && global.document != undefined && global.document.readyState != undefined && global.document.readyState !== "complete") {
+                timeout = setTimeout(_onTimeout, 4);
                 return;
             }
 
@@ -476,9 +483,9 @@ var EventSourcePolyfill = (function (global) {
             }
 
             wasActivity = false;
-            timeout = setTimeout(onTimeout, heartbeatTimeout);
+            timeout = setTimeout(_onTimeout, heartbeatTimeout);
             if (connectionTimeout && connectionTimeout > 0) {
-                timeoutConnection = setTimeout(function() {
+                timeoutConnection = setTimeout(function () {
                     if (xhr.status === 0) {
                         xhr.timeout = 1;
                         if (errorOnTimeout) {
@@ -496,11 +503,11 @@ var EventSourcePolyfill = (function (global) {
             value = "";
             field = "";
             state = FIELD_START;
-            var s = this.url.slice(0, 5);
+            var s = _this.url.slice(0, 5);
             if (s !== "data:" && s !== "blob:") {
-                s = this.url + ((this.url.indexOf("?", 0) === -1 ? "?" : "&") + "lastEventId=" + encodeURIComponent(lastEventId) + "&r=" + (Math.random() + 1).toString().slice(2));
+                s = _this.url + ((_this.url.indexOf("?", 0) === -1 ? "?" : "&") + "lastEventId=" + encodeURIComponent(lastEventId) + "&r=" + (Math.random() + 1).toString().slice(2));
             } else {
-                s = this.url;
+                s = _this.url;
             }
             xhr.timeout = 0;
             xhr.open("GET", s, true);
@@ -542,10 +549,10 @@ var EventSourcePolyfill = (function (global) {
         this.onopen = undefined;
         this.onmessage = undefined;
         this.onerror = undefined;
-        onTimeout();
+        _onTimeout();
     }
 
-    function F () {
+    function F() {
         this.CONNECTING = CONNECTING;
         this.OPEN = OPEN;
         this.CLOSED = CLOSED;
@@ -560,7 +567,6 @@ var EventSourcePolyfill = (function (global) {
     }
 
     return EventSourcePolyfill;
+}(typeof window !== 'undefined' ? window : undefined);
 
-}(typeof window !== 'undefined' ? window : this));
-
-export {EventSourcePolyfill};
+exports.EventSourcePolyfill = EventSourcePolyfill;
